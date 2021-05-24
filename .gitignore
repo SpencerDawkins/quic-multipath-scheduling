@@ -1,0 +1,6 @@
+*.html
+*.txt
+*.xml
+.refcache
+*.bak
+lib
