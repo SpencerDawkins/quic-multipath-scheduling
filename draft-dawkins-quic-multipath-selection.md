@@ -1,6 +1,6 @@
 ---
 title: Path Selection for Multiple Paths In QUIC
-abbrev: QUIC Multipath Scheduling
+abbrev: QUIC Multipath Path Selection
 docname: draft-dawkins-quic-multipath-selection-latest
 date:
 category: info
@@ -23,18 +23,22 @@ author:
 
 informative:
 
-  I-D.ietf-quic-transport:
+  RFC9000:
   I-D.ietf-quic-datagram:
-  I-D.ietf-quic-http:
-  I-D.deconinck-quic-multipath:
+  
   I-D.an-multipath-quic:
   I-D.an-multipath-quic-application-policy:
-  I-D.liu-multipath-quic:
+  I-D.an-multipath-quic-traffic-distribution:
+  I-D.chan-quic-owl:
+  I-D.deconinck-quic-multipath:
   I-D.huitema-quic-mpath-option:
+  I-D.huitema-quic-mpath-req:
+  I-D.liu-multipath-quic:
+  I-D.piraux-intarea-quic-tunnel-session:
+  
   I-D.bonaventure-iccrg-schedulers:
-  I-D.amend-iccrg-multipath-reordering:
+  
   I-D.dawkins-quic-what-to-do-with-multipath:
-  I-D.dawkins-quic-multipath-questions:
 
   TS23501:
     author:
@@ -49,17 +53,13 @@ informative:
     date: 2021
     target: https://www.3gpp.org/ftp/Specs/archive/23_series/23.700-93/
 
-  S2-2104582:
+  S2-2104599:
     author:
       - ins: Lenovo, Motorola Mobility
-    title: Discussion on ATSSS Enhancements
+    title: Study on Access Traffic Steering, Switching and Splitting support in the 5G system architecture; Phase 3
     date: 2021
-    target: https://www.3gpp.org/ftp/tsg_sa/WG2_Arch/TSGS2_145E_Electronic_2021-05/Docs/S2-2104582.zip
+    target: https://www.3gpp.org/ftp/tsg_sa/WG2_Arch/TSGS2_145E_Electronic_2021-05/Docs/S2-2104599.zip
 
-  RFC0793:
-  RFC4960:
-  RFC5061:
-  RFC7540:
   RFC8684:
 
   ICCRG-charter:
@@ -69,20 +69,16 @@ informative:
   QUIC-charter:
     title: IETF QUIC Working Group Charter
     target: https://datatracker.ietf.org/wg/quic/about/
-  QUIC-IETF-109-minutes:
-    title: IETF QUIC Working Group IETF 109 Meeting - November 2020 - Minutes
-    target: https://datatracker.ietf.org/doc/minutes-109-quic/
   QUIC-interim-20-10:
     title: IETF QUIC Working Group Virtual Interim Meeting - October 2020
     target: https://github.com/quicwg/wg-materials/tree/master/interim-20-10
     date: October 2020
-  QUIC-interim-20-10-minutes:
-    title: IETF QUIC Working Group Virtual Interim Meeting - October 2020 - Minutes
-    target: https://github.com/quicwg/wg-materials/tree/master/interim-20-10
-    
+   
 --- abstract
 
-In QUIC working group discussions about proposals to use multiple paths, one obvious question came up - how does QUIC select paths for packet scheduling over multiple paths?
+In QUIC working group discussions about proposals to use multiple paths, an obvious question came up - given multiple paths, how does QUIC select paths to send packets over?
+
+The answer to that question may inform decisions in the QUIC working group about the scope of any multipath extensions considered for experimentation and adoption. 
 
 This document is intended to summarize aspects of path selection from those contributions and conversations.
 
@@ -90,15 +86,41 @@ This document is intended to summarize aspects of path selection from those cont
 
 # Introduction {#intro}
 
-In QUIC working group discussions about proposals to use multiple paths, one obvious question came up - how does QUIC select paths for packet scheduling over multiple paths?
+In QUIC working group {{QUIC-charter}} discussions about proposals to use multiple paths, an obvious question came up - given multiple paths, how does QUIC select paths to send packets over?
+
+The answer to that question may inform decisions in the QUIC working group about the scope of any multipath extensions considered for experimentation and adoption. 
 
 This document is intended to summarize aspects of path selection from those contributions and conversations.
+
+##Why We Should Look at Path Selection Strategies Now {#atsss}
+
+One of the first questions that's come up in discussions about multiple paths for QUIC has been about path selection. As soon as an implementation has multiple paths available, it must decide how to use these paths. The {{RFC9000}} answer, relying on connection migration, is "if you have multiple paths available, you can validate more than one connection at a time, but you only send on one connection at a time, and you migrate to another connection when you decide sending on the current connection is no longer appropriate. How you decide to migrate to another connection is up to you".
+
+That has been a fine answer for many of the implementers who have worked on the first version of QUIC, and have deployed it in their networks. For other implementers, targeting other use cases and other networking environments, it may not be sufficient. 
+
+To take only one example, one of several presentations at {{QUIC-interim-20-10}} described aspects of 3GPP Access Traffic Steering, Switch and Splitting support (ATSSS), which contained four "Steering Modes" as part of Rel-16 in 2019 {{TS23501}}, each of which corresponding roughly to a path selection strategy described in {{strategies}} of this document. A study on "ATSSS Phase 2" {{TR23700-93}} included four more Steering Modes for Rel-17, expected to be finalized in mid-2021, and none of these eight (so far) Steering Modes are based on QUIC - they are based on Multipath TCP ({{RFC8684}} or simple IP packet forwarding. And if that were not enough, a proposal for a study on "ATSSS Phase 3" {{S2-2104599}} was provided to the SA2 145-e meeting in May 2021. Some of the ATSSS strategies rely in 5G network internals and don't translate to the broader Internet, but most do translate, and 3GPP participants certainly aren't the only people thinking about path selection strategies. 
+
+Since the various proposals presented at {{QUIC-interim-20-10}} were developed in isolation from each other, the path selection strategies that they reflect may be similar between proposals, but not quite the same, and none of the proposals presented had more than two strategies in common with any other proposal. 
+
+Given the number of path selection strategies being considered, implemented, and even deployed in any number of venues, and the potential for combinatorial explosion as described in {{combo}}, it seems that identifying common aspects of path selection strategies, sooner rather than later, is important. 
 
 ## Notes for Readers {#readernotes}
 
 This document is an informational Internet-Draft, not adopted by any IETF working group, and does not carry any special status within the IETF.
 
 Please note well that this document reflects the author's current understanding of past working group discussions and proposals.  Contributions that add or improve considerations are welcomed, as described in {{contrib}}. 
+
+## Minimal Terminology {#min-term}
+
+In this document, "QUIC multipath" is only used as shorthand for "QUIC using multiple paths". It does not refer to a specific proposal.
+
+In this document, "path selection strategy" means the policy that a QUIC sender uses to guide its choice between multiple interfaces of a QUIC connection for "the next packet". 
+
+This document adopts three terms, stolen from {{TS23501}}, that seemed helpful in previous discussions about multipath in the QUIC working group. 
+
+* Traffic Steering - selecting an initial path (in {{RFC9000}}, this would be "validating a connection"). 
+* Traffic Switching - selecting a different validated path (in {{RFC9000}}, this is something like "migrating to a new validated connection", although whether connection migration as defined in {{RFC9000}}) would be sufficient is discussed in {{implic}}). 
+* Traffic Splitting - using multiple validated paths simultaneously (this would almost certainly require an extension beyond connection migration as defined in {{RFC9000}}).
 
 ## Contribution and Discussion Venues for this draft. {#contrib}
 
@@ -108,28 +130,32 @@ This document is under development in the Github repository at https://github.co
 
 Readers are invited to open issues and send pull requests with contributed text for this document, but since the document is intended to guide discussion for the QUIC working group, substantial discussion of this document should take place on the QUIC working group mailing list (quic@ietf.org). Mailing list subscription and archive details are at https://www.ietf.org/mailman/listinfo/quic.
 
-## Minimal Terminology {#min-term}
-
-This document adopts three terms, stolen from {{TS23501}}, that seemed helpful in discussions about multipath in the QUIC working group. 
-
-* Traffic Steering - selecting a path (in {{I-D.ietf-quic-transport}}, this would be "validating a connection"). 
-* Traffic Switching - selecting a different path (in {{I-D.ietf-quic-transport}}, this would be "migrating a connection"). 
-* Traffic Splitting - using multiple paths simultaneously (this may require a QUIC extension).
-
 #Background for this document {#background}
 
-In this document, "QUIC multipath" is only used as shorthand for "QUIC using multiple paths". It does not refer to a specific proposal. 
+A number of individual draft proposals for "QUIC over multiple paths" have been submitted to the IETF QUIC and INTAREA working groups, dating back as far as 2017. The author thinks that the complete list is as follows (and reminders for proposals he missed are welcomed): 
 
-It cannot be emphasized enough that multiple proposals for "QUIC multipath" have been submitted to the the quic working group (at a minimum, {{I-D.deconinck-quic-multipath}}, {{I-D.an-multipath-quic}}, {{I-D.an-multipath-quic-application-policy}}, 
-{{I-D.liu-multipath-quic}}, and {{I-D.huitema-quic-mpath-option}}).
+* {{I-D.an-multipath-quic}}
+* {{I-D.an-multipath-quic-application-policy}}
+* {{I-D.an-multipath-quic-traffic-distribution}}
+* {{I-D.chan-quic-owl}}
+* {{I-D.deconinck-quic-multipath}}
+* {{I-D.deconinck-quic-multipath}}, 
+* {{I-D.huitema-quic-mpath-req}}
+* {{I-D.huitema-quic-mpath-option}})
+* {{I-D.liu-multipath-quic}}
+* {{I-D.piraux-intarea-quic-tunnel-session}}
 
 {{I-D.bonaventure-iccrg-schedulers}} has also been submitted to the Internet Congestion Control Research Group {{ICCRG-charter}} in the Internet Research Task Force. It contains specific proposals for implementing some multipath schedulers, and includes some discussion of path selection relevant to this document. 
 
-#Path Selection Strategies {#strategies}
+{{I-D.dawkins-quic-what-to-do-with-multipath}} was intended to summarize, at a high level, the various proposals for the use of multipath capabilities in QUIC, both inside the IETF and outside the IETF, in order to identify common elements. 
 
-One point of confusion in QUIC working group discussions was that various proposals (dating back to the use of Multipath TCP {{RFC8684}}, so not QUIC-specific) discussed in working group meetings and on the QUIC mailing list were from various proponents who weren't solving the same problem, so no two of the use cases presented at the QUIC working group virtual interim on Multipath {{QUIC-interim-20-10}} were relying on the same strategies.
+One element that is certainly worth considering is whether the usages being proposed for QUIC over multiple paths can be satisfied using a small number of "building block" strategies. 
 
-The following strategies were discussed at {{QUIC-interim-20-10}}, and afterwards on the QUIC mailing list. These are summarized in this section, described in more detail in {{I-D.dawkins-quic-what-to-do-with-multipath}}, and are attributed to various proposals in that document.
+#Overview of Proposed Path Selection Strategies {#strategies}
+
+One point of confusion in QUIC working group discussions was that various proposals (dating back to the use of Multipath TCP {{RFC8684}}, so not all QUIC-specific proposals) discussed in working group meetings and on the QUIC mailing list were from various proponents who weren't solving the same problem, so no two of the use cases presented at the QUIC working group virtual interim on Multipath {{QUIC-interim-20-10}} were relying on the same strategies.
+
+The following strategies were discussed at {{QUIC-interim-20-10}}, and afterwards on the QUIC mailing list. These are summarized in this section, are described in more detail in {{I-D.dawkins-quic-what-to-do-with-multipath}}, and are attributed to various proposals in that document.
 
 * Active-Standby - described in {{act-stand}}
 * Latency Versus Bandwidth - described in {{lat-band}}
@@ -142,19 +168,17 @@ The following strategies were discussed at {{QUIC-interim-20-10}}, and afterward
 * Control Plane Versus Data Plane - described in {{cp-dp}}
 * Combinations of Strategies - described in {{combo}}
 
-The terminology defined in {{min-term}} is used in this section. 
-
 ##Active-Standby {#act-stand}
 
 The traffic associated with a specific flow will be sent via a specific path (the 'active path') and switched to another path (called 'standby path') when the active access is unavailable.
 
 ##Latency Versus Bandwidth {#lat-band}
 
-Some traffic is sent over a network path with lower latency and other traffic is sent over a different network path with higher bandwidth. 
+Some traffic might be sent over a network path with lower latency and other traffic might be sent over a different network path with higher bandwidth.
 
 ##Bandwidth Aggregation/Load Balancing {#load-bal}
 
-Traffic is sent over all available paths simultaneously. This strategy is often used for bulk transfers. 
+Traffic is sent using all available paths simultaneously, so that all available bandwidth is utilized, likely based on something like weighted round-robin path selection. This strategy is often used for bulk transfers. 
 
 ##Minimum RTT Difference {#min-rtt}
 
@@ -174,7 +198,7 @@ Priorities are assigned to each path (often by association with network interfac
 
 ##Redundant {#redundant}
 
-Traffic is replicated over two or more paths to increase the likelihood that at least one copy of each packet will arrive at the receiver. This strategy could be used for all traffic, but is more commonly used when measured network conditions indicate that redundant sending may be beneficial. 
+Traffic is replicated over two or more paths. This strategy could be used continuously, but is more commonly used when measured network conditions indicate that redundant sending may be necessary to increase the likelihood that at least one copy of each packet will arrive at the receiver. 
 
 ##Control Plane Versus Data Plane {#cp-dp}
 
@@ -182,21 +206,23 @@ An application might stream media over one or more available paths (based on one
 
 ##Combinations of Strategies {#combo}
 
-In addition to the strategies described above, it is also possible to combine these strategies. For example, a scheduler might use load-balancing over three paths, but when one of the paths becomes unavailable, the scheduler might switch to the two paths that are still available.
+In addition to the strategies described above, it is also possible to combine these strategies. For example, a scheduler might use load-balancing over three paths, but when one of the paths becomes unavailable, the scheduler might switch to the two paths that are still available, in a way similar to Active-Standby. This is very much an example chosen at random - potentially, there are many combinations that could be useful. 
 
-#Implications for QUIC 
+#Implications for QUIC Multipath {#implic}
 
-The Active-Standby strategy does not rely on any extension to {{I-D.ietf-quic-transport}}. If more than one QUIC connection is validated, an endpoint can migrate a connection to a new local address by sending packets containing non-probing frames from that address. This strategy provides traffic steering and traffic switching, but does not provide traffic splitting, because only one path is in active use at any time. 
+This section summarizes potential implications of path selection strategies described in {{strategies}} for "Multipath QUIC". 
 
+If a sender using Active-Standby (described in {{act-stand}}) does not perform frequent path switching, it can likely be supported using connection migration as defined in {{RFC9000}} without change. 
 
+* The caveat here is that connection migration can include the also-implicit assumption that an endpoint can free up resources associated with the previously-active path. If connection migration happens often enough, the endpoint may spend considerable time "thrashing" between allocating resources and quickly freeing them. Of course, if a sender is frequently selecting a new path for connection migration, this probably degenerates into one of the other path selection strategies. 
 
-#A Personal Aside on 3GPP Access Traffic Steering, Switch and Splitting support (ATSSS) {#atsss}
+Some path selection strategies are exploiting a relatively long-lived difference between paths - for example, Latency Versus Bandwidth (described in {{lat-band}}), Priority-based (described in {{prior}}), and Control Plane Versus Data Plane (described in {{cp-dp}}) may fall into this category. One might wonder why these senders would want to use a single "multipath connection", rather than multiple {{RFC9000}} connections, for these cases. 
 
-Just to provide perspective on the importance of understanding packet scheduling strategies, 3GPP Access Traffic Steering, Switch and Splitting support (ATSSS) contained four scheduling strategies in Rel-16 in 2019 {{TS23501}}, all of which corresponded roughly to packet scheduling strategies described in {{strategies}}, but a study on "ATSSS Phase 2" {{TR23700-93}} included four more strategies, and a discussion paper for an "ATSSS Phase 3" was recently submitted to SA2#145-e {{S2-2104582}}. 
+Some path selection strategies could be supported by a mechanism as simple as the one proposed in {{I-D.huitema-quic-mpath-option}}, which replaces "the implicit signaling of path migration through data transmission, by means of a new PATH_OPTION frame" (this isn't intended to imply the proposal is simple, only the explicit signaling), if the receiver uses this option to notify the sender of the preferred path. For example, Minimum RTT Difference (described in {{min-rtt}}) and Round-Trip-Time Thresholds (described in {{rtt-thresh}}) likely fall into this category. 
 
-Some of the ATSSS packet scheduling strategies rely in 5G network internals and don't translate to the broader Internet, but others do translate, and they certainly aren't the only people thinking about multipath QUIC packet scheduling strategies. 
+Some path selection strategies are treating more than one path as a set of active paths, whether the sender is performing "Traffic Splitting" (as defined in {{min-term}})), as is the case for Bandwidth Aggregation/Load Balancing (described in {{load-bal}}) and RTT Equivalence (described in {{rtt-sam}}), or simply transmitting the same packet across multiple paths, as is the case for Redundant (described in {{redundant}}). 
 
-Given the number of strategies under discussion, or even actually implemented and deployed, and the potential for combinatorial explosion as described in {{combo}}, it seems that identifying common aspects of packet scheduling strategies, sooner rather than later, is important. 
+Because it is simple enough to imagine various combinations of strategies (as described in {{combo}}), it seems important to understand what basic building blocks are required in order to support the strategies that seem common across a variety of use cases, because interactions between strategies may have significant implications for QUIC Multipath that might not arise when considering strategies in isolation. 
 
 # IANA Considerations
 
@@ -204,11 +230,13 @@ This document does not make any request to IANA.
 
 # Security Considerations
 
-QUIC-specific security considerations are discussed in Section 21 of {{I-D.ietf-quic-transport}}.
+QUIC-specific security considerations are discussed in Section 21 of {{RFC9000}}.
 
 Section 6 of {{I-D.ietf-quic-datagram}} discusses security considerations specific to the use of the Unreliable Datagram Extension to QUIC.
 
-Some multipath QUIC-specific security considerations can be found in the corresponding section of {{I-D.deconinck-quic-multipath}}. 
+Some "Multipath QUIC"-specific security considerations can be found in the corresponding section of {{I-D.deconinck-quic-multipath}}. 
+
+Having said that, it may be best to repeat the security considerations section from {{I-D.huitema-quic-mpath-option}}: "TBD.  There are probably ways to abuse this.".
 
 # Acknowledgments
 
