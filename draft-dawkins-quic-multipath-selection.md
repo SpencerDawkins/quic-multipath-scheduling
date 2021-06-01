@@ -210,7 +210,7 @@ In addition to the strategies described above, it is also possible to combine th
 
 #Implications for QUIC Multipath {#implic}
 
-This section summarizes potential implications for "Multipath QUIC" of path selection strategies described in {{strategies}}, dividing them between "Traffic Switching" ({{min-req}} and "Traffic Splitting" ({{mult-active}}).
+This section summarizes potential implications for "Multipath QUIC" of path selection strategies described in {{strategies}}, dividing them between "Traffic Switching" ({{min-req}}) and "Traffic Splitting" ({{mult-active}}).
 
 ##Selecting a Single Path Among Multiple Validated Paths ("Traffic Switching") {#min-req}
 
@@ -218,13 +218,15 @@ If a sender using Active-Standby (described in {{act-stand}}) does not perform f
 
 * The caveat here is that connection migration can include the also-implicit assumption that an endpoint can free up resources associated with the previously-active path. If connection migration happens often enough, the endpoint may spend considerable time "thrashing" between allocating resources and quickly freeing them. Of course, if a sender is frequently selecting a new path for connection migration, this probably degenerates into one of the other path selection strategies. 
 
-Some path selection strategies are exploiting a relatively long-lived difference between paths - for example, Latency Versus Bandwidth (described in {{lat-band}}), Priority-based (described in {{prior}}), and Control Plane Versus Data Plane (described in {{cp-dp}}) may fall into this category. One might wonder why these senders would want to use a single "multipath connection", rather than multiple {{RFC9000}} connections, for these cases. 
-
 Some path selection strategies could be supported by a mechanism as simple as the one proposed in {{I-D.huitema-quic-mpath-option}}, which replaces "the implicit signaling of path migration through data transmission, by means of a new PATH_OPTION frame" (this isn't intended to imply the proposal is simple, only the explicit signaling), if the receiver uses this option to notify the sender of the preferred path. For example, Minimum RTT Difference (described in {{min-rtt}}) and Round-Trip-Time Thresholds (described in {{rtt-thresh}}) likely fall into this category. 
+
+Some path selection strategies are exploiting a relatively long-lived difference between paths - for example, Latency Versus Bandwidth (described in {{lat-band}}), Priority-based (described in {{prior}}), and Control Plane Versus Data Plane (described in {{cp-dp}}) may fall into this category. One might wonder why these senders would need to use a single "multipath connection", rather than multiple {{RFC9000}} connections, for these cases, but if there is a reason to use a single multipath connection, a mechanism similar to the one proposed in {{I-D.huitema-quic-mpath-option}} could also be used in these cases. 
 
 ##Selecting Multiple Active Paths ("Traffic Splitting") {#mult-active}
 
 Some path selection strategies are treating more than one path as a set of active paths, whether the sender is performing "Traffic Splitting" (as defined in {{min-term}})), as is the case for Bandwidth Aggregation/Load Balancing (described in {{load-bal}}) and RTT Equivalence (described in {{rtt-sam}}), or simply transmitting the same packet across multiple paths, as is the case for Redundant (described in {{redundant}}). 
+
+For these cases, a more complex mechanism is likely required. 
 
 ##Arbitrary Combinations
 
