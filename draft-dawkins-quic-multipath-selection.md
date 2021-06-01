@@ -147,7 +147,7 @@ A number of individual draft proposals for "QUIC over multiple paths" have been 
 
 {{I-D.bonaventure-iccrg-schedulers}} has also been submitted to the Internet Congestion Control Research Group {{ICCRG-charter}} in the Internet Research Task Force. It contains specific proposals for implementing some multipath schedulers, and includes some discussion of path selection relevant to this document. 
 
-{{I-D.dawkins-quic-what-to-do-with-multipath}} was intended to summarize, at a high level, the various proposals for the use of multipath capabilities in QUIC, both inside the IETF and outside the IETF, in order to identify common elements. 
+{{I-D.dawkins-quic-what-to-do-with-multipath}} was intended to summarize, at a high level, various proposals for the use of multipath capabilities in QUIC, both inside the IETF and outside the IETF, in order to identify elements that were common across proposals. 
 
 One element that is certainly worth considering is whether the usages being proposed for QUIC over multiple paths can be satisfied using a small number of "building block" strategies. 
 
@@ -210,7 +210,9 @@ In addition to the strategies described above, it is also possible to combine th
 
 #Implications for QUIC Multipath {#implic}
 
-This section summarizes potential implications of path selection strategies described in {{strategies}} for "Multipath QUIC". 
+This section summarizes potential implications for "Multipath QUIC" of path selection strategies described in {{strategies}}, dividing them between "Traffic Switching" ({{min-req}} and "Traffic Splitting" ({{mult-active}}).
+
+##Selecting a Single Path Among Multiple Validated Paths ("Traffic Switching") (#min-req}
 
 If a sender using Active-Standby (described in {{act-stand}}) does not perform frequent path switching, it can likely be supported using connection migration as defined in {{RFC9000}} without change. 
 
@@ -220,9 +222,15 @@ Some path selection strategies are exploiting a relatively long-lived difference
 
 Some path selection strategies could be supported by a mechanism as simple as the one proposed in {{I-D.huitema-quic-mpath-option}}, which replaces "the implicit signaling of path migration through data transmission, by means of a new PATH_OPTION frame" (this isn't intended to imply the proposal is simple, only the explicit signaling), if the receiver uses this option to notify the sender of the preferred path. For example, Minimum RTT Difference (described in {{min-rtt}}) and Round-Trip-Time Thresholds (described in {{rtt-thresh}}) likely fall into this category. 
 
+##Selecting Multiple Active Paths ("Traffic Splitting") (#mult-active}
+
 Some path selection strategies are treating more than one path as a set of active paths, whether the sender is performing "Traffic Splitting" (as defined in {{min-term}})), as is the case for Bandwidth Aggregation/Load Balancing (described in {{load-bal}}) and RTT Equivalence (described in {{rtt-sam}}), or simply transmitting the same packet across multiple paths, as is the case for Redundant (described in {{redundant}}). 
 
+##Arbitrary Combinations
+
 Because it is simple enough to imagine various combinations of strategies (as described in {{combo}}), it seems important to understand what basic building blocks are required in order to support the strategies that seem common across a variety of use cases, because interactions between strategies may have significant implications for QUIC Multipath that might not arise when considering strategies in isolation. 
+
+This seems especially important because existing proposals for QUIC Multipath don't use the same vocabulary to describe path selection strategies, so implementations may not behave in the same way, even if they are each using a strategy that seems to be common. 
 
 # IANA Considerations
 
