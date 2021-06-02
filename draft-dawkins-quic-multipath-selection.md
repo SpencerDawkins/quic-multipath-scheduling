@@ -82,6 +82,8 @@ The answer to that question may inform decisions in the QUIC working group about
 
 This document is intended to summarize aspects of path selection from those contributions and conversations.
 
+It is recognized that path selection is not the only important open question about QUIC Multipath, but other open questions are out of scope for this document. 
+
 --- middle
 
 # Introduction {#intro}
@@ -91,6 +93,8 @@ In QUIC working group {{QUIC-charter}} discussions about proposals to use multip
 The answer to that question may inform decisions in the QUIC working group about the scope of any multipath extensions considered for experimentation and adoption. 
 
 This document is intended to summarize aspects of path selection from those contributions and conversations.
+
+It is recognized that path selection is not the only important open question about QUIC Multipath, but other open questions are out of scope for this document. 
 
 ##Why We Should Look at Path Selection Strategies Now {#atsss}
 
@@ -118,9 +122,11 @@ In this document, "path selection strategy" means the policy that a QUIC sender 
 
 This document adopts three terms, stolen from {{TS23501}}, that seemed helpful in previous discussions about multipath in the QUIC working group. 
 
-* Traffic Steering - selecting an initial path (in {{RFC9000}}, this would be "validating a connection"). 
+* Traffic Steering - selecting an initial path (in {{RFC9000}}, this would be "validating a connection, and then using it". Although an {{RFC9000}} client can validate multiple connections, the client will only use one validated connection at a time. 
 * Traffic Switching - selecting a different validated path (in {{RFC9000}}, this is something like "migrating to a new validated connection", although whether connection migration as defined in {{RFC9000}}) would be sufficient is discussed in {{implic}}). 
 * Traffic Splitting - using multiple validated paths simultaneously (this would almost certainly require an extension beyond connection migration as defined in {{RFC9000}}).
+
+"Traffic Steering" does not require any extension to {{RFC9000}}, and is not discussed further in this document. The focus will be on "Traffic Switching" and "Traffic Splitting". 
 
 ## Contribution and Discussion Venues for this draft. {#contrib}
 
@@ -147,13 +153,13 @@ A number of individual draft proposals for "QUIC over multiple paths" have been 
 
 {{I-D.bonaventure-iccrg-schedulers}} has also been submitted to the Internet Congestion Control Research Group {{ICCRG-charter}} in the Internet Research Task Force. It contains specific proposals for implementing some multipath schedulers, and includes some discussion of path selection relevant to this document. 
 
-{{I-D.dawkins-quic-what-to-do-with-multipath}} was intended to summarize, at a high level, various proposals for the use of multipath capabilities in QUIC, both inside the IETF and outside the IETF, in order to identify elements that were common across proposals. 
+One point of confusion in QUIC working group discussions was that the various proposals (also using Multipath TCP {{RFC8684}}, so not all proposals were QUIC-specific) discussed in working group meetings and on the QUIC mailing list were from various proponents who weren't solving the same problem. This meant that no two of the use cases presented at the QUIC working group virtual interim on QUIC Multipath {{QUIC-interim-20-10}} were relying on the same strategies.
 
-One element that is certainly worth considering is whether the usages being proposed for QUIC over multiple paths can be satisfied using a small number of "building block" strategies. 
+It seemed useful to collect the path selection strategies described in those proposals, to look for common elements, and to write them down in one place, to allow more focused discussion. {{I-D.dawkins-quic-what-to-do-with-multipath}} was intended to summarize, at a high level, various proposals for the use of multipath capabilities in QUIC, both inside the IETF and outside the IETF, in order to identify elements that were common across proposals. This draft tries to describe the impact of these various strategies on potential QUIC Multipath extensions. 
+
+One element that is certainly worth considering is whether the path selection strategies that have been proposed can be satisfied using a small number of "building block" strategies. 
 
 #Overview of Proposed Path Selection Strategies {#strategies}
-
-One point of confusion in QUIC working group discussions was that various proposals (dating back to the use of Multipath TCP {{RFC8684}}, so not all QUIC-specific proposals) discussed in working group meetings and on the QUIC mailing list were from various proponents who weren't solving the same problem, so no two of the use cases presented at the QUIC working group virtual interim on Multipath {{QUIC-interim-20-10}} were relying on the same strategies.
 
 The following strategies were discussed at {{QUIC-interim-20-10}}, and afterwards on the QUIC mailing list. These are summarized in this section, are described in more detail in {{I-D.dawkins-quic-what-to-do-with-multipath}}, and are attributed to various proposals in that document.
 
@@ -210,9 +216,9 @@ In addition to the strategies described above, it is also possible to combine th
 
 #Implications for QUIC Multipath {#implic}
 
-This section summarizes potential implications for "Multipath QUIC" of path selection strategies described in {{strategies}}, dividing them between "Traffic Switching" ({{min-req}}) and "Traffic Splitting" ({{mult-active}}).
+This section summarizes potential implications for "Multipath QUIC" of path selection strategies described in {{strategies}}, dividing them between "Traffic Switching" ({{single-active}}) and "Traffic Splitting" ({{mult-active}}).
 
-##Selecting a Single Path Among Multiple Validated Paths ("Traffic Switching") {#min-req}
+##Selecting a Single Path Among Multiple Validated Paths ("Traffic Switching") {#single-active}
 
 If a sender using Active-Standby (described in {{act-stand}}) does not perform frequent path switching, it can likely be supported using connection migration as defined in {{RFC9000}} without change. 
 
@@ -233,6 +239,10 @@ For these cases, a more complex mechanism is likely required.
 Because it is simple enough to imagine various combinations of strategies (as described in {{combo}}), it seems important to understand what basic building blocks are required in order to support the strategies that seem common across a variety of use cases, because interactions between strategies may have significant implications for QUIC Multipath that might not arise when considering strategies in isolation. 
 
 This seems especially important because existing proposals for QUIC Multipath don't use the same vocabulary to describe path selection strategies, so implementations may not behave in the same way, even if they are each using a strategy that seems to be common. 
+
+#Next Steps
+
+If this discussion is useful, it may also be useful to take the next step, and identify potential building blocks that can be used to construct the path selection strategies described in {{single-active}} and {{mult-active}}.
 
 # IANA Considerations
 
