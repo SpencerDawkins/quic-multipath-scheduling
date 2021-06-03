@@ -132,7 +132,7 @@ This document adopts three terms, stolen from {{TS23501}}, that seemed helpful i
 
 (Note to RFC Editor - if this document ever reaches you, please remove this section)
 
-This document is under development in the Github repository at https://github.com/SpencerDawkins/draft-dawkins-quic-multipath-selection.
+This document is under development in the Github repository at https://github.com/SpencerDawkins/quic-multipath-selection.
 
 Readers are invited to open issues and send pull requests with contributed text for this document, but since the document is intended to guide discussion for the QUIC working group, substantial discussion of this document should take place on the QUIC working group mailing list (quic@ietf.org). Mailing list subscription and archive details are at https://www.ietf.org/mailman/listinfo/quic.
 
