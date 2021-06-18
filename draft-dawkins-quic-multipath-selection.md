@@ -10,7 +10,6 @@ area: transport
 workgroup: QUIC Working Group
 keyword: Internet-Draft
 
-coding: us-ascii
 stand_alone: yes
 pi: [toc, sortrefs, symrefs]
 
